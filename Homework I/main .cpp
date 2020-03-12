@@ -1,6 +1,15 @@
 #include <iostream>
+#include <stdlib.h>  /* rand */
+#include <time.h>
 
 using namespace std;
+
+void print_array(int arr[], int size){
+	cout << "Array:";
+	for(int i=0; i < size; i++){
+		cout << arr[i] << " ";
+	}
+}
 
 void insert_sort(int A[], int n){
     
@@ -25,7 +34,7 @@ bool is_sorted(int A[], int n){
 }
 
 void merge(int a[], int st, int  mid, int end){
-    int aux1 = mid - st;
+    int aux1 = mid - st + 1;
     int aux2 = end - mid;
     int * left = new int[aux1];
     int * right = new int[aux2];
@@ -34,28 +43,29 @@ void merge(int a[], int st, int  mid, int end){
         left[i] = a[st + i];
     }
     for (int j = 0; j < aux2; j++){
-        right[j] = a[mid + j];
+        right[j] = a[mid + j + 1];
     }
-    
+    print_array(left, aux1);
+    print_array(right, aux2);
     int i = 0;
-    int j = 1;
+    int j = 0;
     
-    for (int k = st; k < end; k++){
-        if(left[i] <= right[j]){
+    //cout << end << endl;
+    for (int k = st; k < end + 1; k++){
+        if((left[i] <= right[j] && i < aux1) || j >= aux2 ){
+            cout << "left: " <<  left[i] << endl;
             a[k] = left[i];
             i = i + 1;
         }
         else{
             a[k] = right[j];
+            cout << "right :" << right[i] << endl;
             j = j + 1;
         }
     }
 }
 
 void merge_sort(int a[], int st, int end){
-    //if (size <= 1){
-    //    return
-    //}
     if (st < end){
         int mid = ((st + end)/2);
         merge_sort(a, st, mid);
@@ -65,39 +75,37 @@ void merge_sort(int a[], int st, int end){
     
 }
 
-//Extend 
-
 int main()
 {   
     //Create the random lists
     int a[] = {2,3,4,8,1};
     int n = 5;
     
-    //Uma vez que a é ordenada, então esse vetor ordenado ocupa o mesmo espaço de memória?
-    //int * sorted_a = new int[n];
-    
-    //for (int i; i < n; i++){
-    //    sorted_a[i] = a[i];
-    //}
-    
-    //int sorted_a[5] = insert_sort(a, n); insert_sort é uma função void
-    insert_sort(a, n); 
-    
-    if (is_sorted(a, n) == false){
+    for (int ns = 10000; ns < 100001; ns += 10000){
+        
+        //Call insert_sort and calculate time
+        //insert_sort(a, n);
+
+        if (is_sorted(a, n) == false){
+            cout << "ERROR!" << endl;
+        }
+        
+        //Call merge_sort and calculate the time
+        merge_sort(a, 0, n - 1);
+        cout << a[0] << a[2] << endl;
+        
+        if (is_sorted(a, n) == false){
         cout << "ERROR!" << endl;
-    }
-    else{
-        cout << "Olá mundooooo" << endl;
+        }
     }
     
     int ab = 2.5; 
-    cout << "oi" <<  ab  << "love" << endl;
-    
-    int nc = 9;
-    int ac[] = {2,1,4,5,7,9,3, 6, 0};
+
+    int nc = 4;
+    int ac[] = {2,1,4,5};
     int b = 0;
-    merge_sort(ac, b, n);
-    bool sorted = is_sorted(ac, n);
-    cout << sorted << endl;
+    merge_sort(ac, b, n - 1);
+
+    print_array(ac, nc);
     return 0;
 }
