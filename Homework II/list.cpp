@@ -1,4 +1,5 @@
 #include <iostream>
+#include <initializer_list>
 
 using namespace std;
 
@@ -16,6 +17,17 @@ private:
 
 public:
     LinkedList(): pRoot(NULL), length(0) {}
+    
+    LinkedList(initializer_list<int> mylist) : length(0), pRoot(NULL){
+        for(auto elem : mylist){
+            insert(elem);
+        }
+    }
+    
+    ~LinkedList(){
+        delete
+        cout << "LinkedList "
+    }
 
     bool find(int x, Node **&pNode) {
         pNode = &pRoot;
@@ -29,7 +41,7 @@ public:
     }
 
 
-    void insert(int x) {
+    void insertOrdered(int x) {
         // STEPS:
         // 1. Use the find function to check if the value `x` exists
         // 2. If it exists, then return 
@@ -43,41 +55,49 @@ public:
         }
         else{
             Node *pNew = new Node(x);
-            Node *pCurr = pRoot;
-            Node **pAux = &pRoot;
-            
+            Node **pCurr; 
+            pCurr = &pRoot;
+
+            //Se não há elemento na linked list, ele adiciona como primeiro
             if (length == 0){
                 pRoot = pNew;
+                length++;
+                return;
             }
             else{
                 
+                //Adiciona antes de todos os demais
                 if(pRoot -> data > x){
     			    pNew -> pNext = pRoot;
 			        pRoot = pNew;
+			        length++;
+			        return;
                 }
                 
                 else{
                 
-                while(pCurr){
-                Node *aux = pCurr;
-			    pCurr = pCurr -> pNext;
-			    pAux = &((*pAux)->pNext);
+                bool addEnd = true;
+                
+                while(*pCurr){
 
-			    if(pCurr == NULL && aux -> data < x){
-				    (*&aux) -> pNext = pNew;
+			    if((*pCurr)->data < x &&  ((*pCurr)->pNext) -> data > x){
+                    ((*pCurr) -> pNext) = pNew;
+                    pNew -> pNext = *pCurr;
+                    addEnd = false;
+                }
+                pCurr = &((*pNode)->pNext);
+			    
+                }
+                
+                //É o maior elemento da lista, é adicionado após todos
+                if(addEnd){
+			        pNew -> pNext = *pNode;
+			        *pNode = pNew;
 				}
-				
-				//Resolver a ordem
-				if(aux -> data > x){ 
-				    pNew -> pNext = pCurr;
-				    aux -> pNext = pNew;
-				}
-    			}
                     
                 }
             }
            
-            length ++;
         }
     }
 
@@ -89,6 +109,21 @@ public:
         }
         cout << endl;
 
+    }
+    
+    void insert(int x){
+        Node **pNode;
+        
+        if (find(x, pNode) == true){
+            return;
+        }
+        //Chamada a função find, *pNode está no último nó se ele não encontra o elemento
+        else{
+            Node *pNew = new Node(x);
+            pNew -> pNext = *pNode;
+            *pNode = pNew;
+        }
+        
     }
 
     void remove(int x) {
@@ -111,28 +146,29 @@ public:
                 }
                 
                 else{
-                
-                while(pCurr){
+                while(pCurr!= NULL){
+                    Node *aux = pCurr;
+                     pCurr = pCurr -> pNext;   
 
-			    if(pCurr -> data == x){
-                    *&pCurr = pCurr -> pNext;
-				}
-
-            	pCurr = pCurr -> pNext;
+                    if (pCurr -> data == x && pCurr -> pNext == NULL){
+                        aux -> pNext = NULL;
+                    }
 
                 }
+                
                 }
            
             length --;
     }
     }
+    
 };
 
 int main() {
     LinkedList list;
     list.insert(1);
     
-    list.insert(0); //teste
+    list.insert(0); 
     
     list.insert(10);
 
@@ -141,10 +177,18 @@ int main() {
 
     list.insert(1);
     list.insert(1000);
+    list.insert(-5);
+    list.insert(2);
+
     list.print();
 
-    list.remove(5);
+    //list.remove(1000);
     list.print();
+    
+    LinkedList lista({1,2,3,5,6,8,4,4,5});
+    LinkedList listinha({2,5,6,7,8,6,6,7,8});
+    lista.print();
+    listinha.print();
 
     return 0;
 }
