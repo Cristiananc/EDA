@@ -1,35 +1,50 @@
 #include <iostream>
 #include <initializer_list>
+//Referências: https://www.cs.bu.edu/teaching/c/linked-list/delete/
 
 using namespace std;
 
-struct Node{
-    int data;
-    Node *pNext;
+struct NotFoundException : public exception{
+    const char * what () const throw(){
+        return "Element not found";
+    }
+} exc;
 
-    Node(int x):data(x), pNext(NULL){}
+template<typename T>
+struct Node{
+    T data;
+    Node<T> *pNext;
+
+    Node<T>(T x):data(x), pNext(NULL){}
 };
 
+template<typename T>
 class LinkedList{
 private:
-    Node *pRoot;
+    Node<T> *pRoot;
     int length;
 
 public:
     LinkedList(): pRoot(NULL), length(0) {}
     
-    LinkedList(initializer_list<int> mylist) : length(0), pRoot(NULL){
+    LinkedList(initializer_list<T> mylist) : length(0), pRoot(NULL){
         for(auto elem : mylist){
             insert(elem);
         }
     }
     
     ~LinkedList(){
-        delete
-        cout << "LinkedList "
+        Node<T> *obj = pRoot;
+        Node<T> *p;
+        while(obj) {
+            p = obj;
+            delete obj;
+            obj = p -> pNext;
+        }
+        cout << "LinkedList was deleted." << endl;
     }
 
-    bool find(int x, Node **&pNode) {
+    bool find(T x, Node<T> **&pNode) {
         pNode = &pRoot;
         while(*pNode) {
             if ((*pNode)->data==x) {
@@ -40,8 +55,8 @@ public:
         return 0;
     }
 
-
-    void insertOrdered(int x) {
+//Tentativa de fazer o insert em ordem
+    void insertOrdered(T x) {
         // STEPS:
         // 1. Use the find function to check if the value `x` exists
         // 2. If it exists, then return 
@@ -49,14 +64,15 @@ public:
         // 4. Set pointers (Hint: you need to set 2 pointers)
         // 5. Increase the `length` attribute 
         
-        Node **pNode;
+        Node<T> **pNode;
         if (find(x, pNode) == true){
             return;
         }
         else{
-            Node *pNew = new Node(x);
-            Node **pCurr; 
-            pCurr = &pRoot;
+            Node<T> *pNew = new Node<T> (x);
+            Node<T> **pList = &pRoot;
+            Node<T> *pCurr = *pList;
+
 
             //Se não há elemento na linked list, ele adiciona como primeiro
             if (length == 0){
@@ -64,45 +80,40 @@ public:
                 length++;
                 return;
             }
-            else{
-                
-                //Adiciona antes de todos os demais
+            
+            //Adiciona antes de todos os demais
                 if(pRoot -> data > x){
     			    pNew -> pNext = pRoot;
 			        pRoot = pNew;
 			        length++;
 			        return;
                 }
-                
+                    
+                //Casos em que adiciono o elemento no meio ou fim
                 else{
                 
-                bool addEnd = true;
-                
-                while(*pCurr){
+                while(pCurr -> pNext != NULL){
+                pCurr = pCurr -> pNext;
 
-			    if((*pCurr)->data < x &&  ((*pCurr)->pNext) -> data > x){
-                    ((*pCurr) -> pNext) = pNew;
-                    pNew -> pNext = *pCurr;
-                    addEnd = false;
+                if(pCurr -> pNext == NULL){
+                    pCurr -> pNext = pNew;
+			        length++;
+			        return;
                 }
-                pCurr = &((*pNode)->pNext);
-			    
-                }
-                
-                //É o maior elemento da lista, é adicionado após todos
-                if(addEnd){
-			        pNew -> pNext = *pNode;
-			        *pNode = pNew;
-				}
-                    
-                }
+                if(pCurr -> pNext -> data > x && pCurr -> data < x){
+                        pNew -> pNext = pCurr -> pNext;
+                        pCurr -> pNext = pNew;
+                        length++;
+                        return;
             }
-           
-        }
+            }
+		}
     }
+           
+ }
 
     void print() {
-        Node *obj = pRoot;
+        Node<T> *obj = pRoot;
         while(obj) {
             cout << obj->data << " ";
             obj=obj->pNext;
@@ -111,22 +122,22 @@ public:
 
     }
     
-    void insert(int x){
-        Node **pNode;
+    void insert(T x){
+        Node<T> **pNode;
         
         if (find(x, pNode) == true){
             return;
         }
-        //Chamada a função find, *pNode está no último nó se ele não encontra o elemento
-        else{
-            Node *pNew = new Node(x);
+        //Posso usar aqui o pNode, já q já iteramos com ele por todos os elementos
+            else{
+            Node<T> *pNew = new Node<T>(x);
             pNew -> pNext = *pNode;
             *pNode = pNew;
         }
         
     }
 
-    void remove(int x) {
+    void remove(T x) {
         // STEPS: 
         // 1. Use the find function to check if the value `x` exists
         // 2. If it does not exist, then return
@@ -134,61 +145,126 @@ public:
         // 4. Release memory 
         // 5. Decrease the `length` attribute 
         
-        Node **pNode;
-        if (find(x, pNode) == false){
-            return;
+        Node<T> **pNode;
+        if (find(x, pNode) == false) {
+            throw exc;
         }
         else{
-            Node *pCurr = pRoot;
+            Node<T> **pList = &pRoot;
+            Node<T> *pCurr = *pList;
+            Node<T> *Pprev = NULL;
+            
+            //Caso em que vamos apagar o único elemento da lista            
+            if(length == 1){
+                    pRoot = NULL;
+                    length--;
+                    return;
+                }
                 
-                if(pRoot -> data == x){
-    			    pRoot = pCurr -> pNext;
+                //O primeiro elemento
+                if(pCurr -> data == x){
+                    pRoot = pCurr -> pNext;
+                    free(pCurr);
+                    length--;
+                    return;
                 }
                 
                 else{
-                while(pCurr!= NULL){
-                    Node *aux = pCurr;
-                     pCurr = pCurr -> pNext;   
-
-                    if (pCurr -> data == x && pCurr -> pNext == NULL){
-                        aux -> pNext = NULL;
-                    }
-
+                while(pCurr){
+                if(pCurr -> data == x){
+                    Pprev -> pNext = pCurr -> pNext;
+                    
+                    free(pCurr);
+                    length--;
+                    return;
                 }
                 
-                }
-           
-            length --;
-    }
+                Pprev = pCurr;
+                pCurr = pCurr -> pNext;
+            }
+            
+        }
+        }
     }
     
+    class Iterator{
+        private:
+                Node<T> *pNode_it;
+        public:
+                Iterator(): pNode_it(NULL){}
+                
+                Iterator(Node<T> * p) : pNode_it(p){}
+                
+                bool operator != (Iterator it){
+                    return pNode_it != it.pNode_it;
+                }
+                
+                Iterator operator++(){
+                        pNode_it = pNode_it -> pNext;
+                }
+                
+                T& operator*(){
+                    return pNode_it -> data;
+                }
+    };
+                Iterator begin(){
+                    return Iterator(pRoot);
+                }
+                
+                Iterator end(){
+                    return Iterator(NULL);
+                }
 };
 
 int main() {
-    LinkedList list;
+    
+    cout << "Item A" << endl;
+    LinkedList<int> list;
     list.insert(1);
-    
-    list.insert(0); 
-    
+    list.insert(0);
     list.insert(10);
-
     list.insert(5);
     list.insert(-1);
-
     list.insert(1);
     list.insert(1000);
     list.insert(-5);
-    list.insert(2);
 
     list.print();
-
-    //list.remove(1000);
+    list.remove(1);
+    list.remove(-5);
+    list.remove(10);
     list.print();
+
+    cout << "Item B:" << endl;
+    LinkedList<int>  list1({1, 2, 10, 2, 3});
+    list1.print ( ) ;
     
-    LinkedList lista({1,2,3,5,6,8,4,4,5});
-    LinkedList listinha({2,5,6,7,8,6,6,7,8});
-    lista.print();
-    listinha.print();
-
+    
+    cout << "Item D:" << endl;
+    LinkedList<int> ilist({1,10,2});
+    ilist.print();
+    
+    LinkedList<float> flist({1.2, 1.4, 100000});
+    flist.print();
+    
+    LinkedList<std::string> slist({"one", "two", "three"});
+    slist.print();
+    
+    cout << "Item E:" << endl;
+    LinkedList<int> ilist2({1,2,10,2,3});
+    LinkedList<int>::Iterator it;
+    for (it = ilist2.begin(); it != ilist2.end(); ++it){
+        cout << *it << " ";
+    }
+    cout << endl;
+    
+    cout << "Item F:" << endl;
+    try{
+        list.remove(109);
+    } catch (const NotFoundException& e){
+        cerr << e.what() << endl;    
+    }
+    
+    
     return 0;
 }
