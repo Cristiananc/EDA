@@ -1,6 +1,8 @@
 #include <iostream>
 #include <iomanip>
 
+//RBT not finished
+
 using namespace std;
 
 enum colors {black, red};
@@ -25,16 +27,27 @@ protected:
 public:
     BlackRedTree():pRoot(nullptr) {}
     
-    Node* get_parent(Node* p){
+    void swap_color(Node *p){
+        if (p -> color == red) p -> color = black;
+        else if (p -> color == black) p -> color = red;
+    }
+    
+    Node* parent(Node* p){
         return (p -> parent);
     }
     
-    Node* get_grandparent(){
-        
+    Node* grandparent(Node* p){
+        return parent(parent(p));
     }
     
-    Node* get_aunt(){
-        
+    Node** aunt(Node** p, Node* pai){
+        Node **aunt;
+        Node **grandparent = &(pai -> parent);
+        if (pai == (*grandparent) -> pChild[0]){
+            aunt = &((*grandparent) -> pChild[1]);
+        }
+        else aunt = &((*grandparent) -> pChild[0]);
+        return aunt;
     }
 
     bool find(int x) {
@@ -52,7 +65,75 @@ public:
             (*p) -> parent = pai;
             //cout << (*p) -> parent << endl;
         }
+        recolor(p, pai);
     }
+    
+    void recolor(Node **p, Node *pai){
+
+        if ( pai == pRoot){
+            pai -> color = black; //Caso 1
+            return;
+        }
+        if (pai -> color == black) return; //Caso 2
+        
+        while(((*p) != pRoot) && ((*p) -> parent -> color != black)){
+            Node *grandparent = pai -> parent;
+            Node *uncle = nullptr;
+            Node *pai = (*p) -> parent;
+            
+            if (pai == grandparent -> pChild[0]){
+                uncle = grandparent -> pChild[1];
+            }
+            else uncle = grandparent -> pChild[0];
+            //if (uncle == NULL && pai == grandparent -> pChild[1]){
+            //    rotateLeft(grandparent);
+            //    (*p) -> color = black;
+            //    recolor(&grandparent, grandparent -> parent);
+            //}
+            
+                if (uncle -> color == red){
+                    uncle -> color = black;
+                    pai -> color = black;
+                    grandparent -> color = red;
+                    recolor(&grandparent, grandparent -> parent);
+                }
+            
+                else if (uncle -> color == black){
+                //Left left case
+                if((pai == grandparent -> pChild[0]) && ((*p) == pai -> pChild[0])){
+                    rotateRight(grandparent);
+                    swap_color(pai);        //segmentation fault
+                    swap_color(grandparent);
+                    recolor(p, (*p) -> parent);
+
+                }
+                // Left Right case
+                else if((pai == grandparent -> pChild[0]) && ((*p) == pai -> pChild[1])){
+                    rotateLeft((*p));
+                    rotateRight(grandparent);
+                    swap_color(*p);
+                    swap_color(grandparent);
+                    recolor(p, (*p) -> parent);
+                }
+                else if((pai == grandparent -> pChild[1]) && ((*p) == pai -> pChild[0])){
+                    rotateRight((*p));
+                    rotateLeft(grandparent);
+                    swap_color(grandparent);
+                    swap_color(*p);
+                    recolor(p, (*p) -> parent);
+                }
+                
+                //Right right case
+                else if((pai == grandparent -> pChild[1]) && ((*p) == pai -> pChild[1])){
+                    rotateLeft(grandparent);
+                    swap_color(grandparent);
+                    swap_color(pai);
+                    recolor(p, (*p) -> parent);
+                }
+            
+            } 
+        }
+    } 
     
     void RBinsert(int a){
         Node *y = nullptr;
@@ -83,7 +164,7 @@ public:
         z -> color = red;
     }
     
-    void rotateRight(Node *&pRoot, Node *&p){
+    void rotateRight(Node *&p){
         Node *previous_left = p -> pChild[0];
         p -> pChild[0] = previous_left -> pChild[1];
         
@@ -91,21 +172,21 @@ public:
             p -> pChild[0] -> parent = p;
         }
         previous_left -> parent = p -> parent;
-
-        if (p -> parent == NULL){
-            pRoot = previous_left;
+        
+        if (p == p -> parent -> pChild[1]){
+            p -> parent -> pChild[1] = previous_left;
         }
         else if (p == p -> parent -> pChild[0]){
             p -> parent -> pChild[0] = previous_left;
         }
         
-        else p -> parent -> pChild[1] = previous_left;
-
+        else pRoot = previous_left;
+        
         previous_left -> pChild[1] = p;
         p -> parent = previous_left;
     }
     
-    void rotateLeft(Node *&pRoot, Node *&p){
+    void rotateLeft(Node *&p){
         Node *previous_right = p -> pChild[1];
         p -> pChild[1] = previous_right -> pChild[0];
         
@@ -115,14 +196,15 @@ public:
             p -> pChild[1] -> parent = p;
         }
         
-        if (p -> parent == NULL){
-            pRoot = previous_right;
+        if (p == p -> parent -> pChild[1]){
+            p -> parent -> pChild[1] = previous_right;
+
         }
         else if (p == p -> parent -> pChild[0]){
             p -> parent -> pChild[0] = previous_right;
         }
-        else p -> parent -> pChild[1] = previous_right;
-        
+        else pRoot = previous_right;
+
         previous_right -> pChild[0] = p;
         p -> parent = previous_right;
     }
@@ -140,7 +222,7 @@ public:
     }
     
 private:
-    bool find(int x, Node **&p, Node *&pParent) {
+    bool find(int x, Node **&p, Node *&pParent){
         p = &pRoot;
         while(*p) { 
             if ((*p)->data==x) return true;
@@ -171,7 +253,7 @@ private:
         if (p) {
             print(p->pChild[1], indent+6);
             cout << setw(indent) << ' ';
-            cout<< p->data <<endl;
+            cout<< p->data << "cor:" << p -> color <<endl;
             print(p->pChild[0], indent+6);
         }
     }
@@ -186,17 +268,18 @@ int main() {
     bst.insert(5);
     bst.insert(1);
     bst.insert(3);
+    bst.insert(8);
     bst.print();
 
     cout << "-----------------\n";
     bst.remove(4);
-    bst.print();
+    //bst.print();
 
     bst.remove(3);
-    bst.print();
+    //bst.print();
 
     bst.remove(6);
-    bst.print();
+    //bst.print();
 
     return 0;
 }
